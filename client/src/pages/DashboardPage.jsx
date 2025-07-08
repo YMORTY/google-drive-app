@@ -8,6 +8,46 @@ const DashboardPage = () => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [folderStack, setFolderStack] = useState([{
+    id: 'root',
+    name: 'My Drive'
+  }]);
+
+  const currentFolder = folderStack[folderStack.length - 1];
+
+  const fetchFiles = async (folderId, query) => {
+    setLoading(true);
+    const params = new URLSearchParams(location.search);
+    const accessToken = params.get('accessToken');
+
+    if (!accessToken) {
+      setError('Access token not found. Please log in again.');
+      setLoading(false);
+      return;
+    }
+
+    console.log(`Fetching files for folder: ${folderId}, search query: ${query}`);
+    try {
+      const response = await axios.get(`http://localhost:3001/api/files?accessToken=${accessToken}&folderId=${folderId}&searchQuery=${query}`);
+      setFiles(response.data);
+    } catch (err) {
+      console.error('Error fetching files:', err);
+      setError('Failed to load files. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      fetchFiles(currentFolder.id, searchQuery);
+    }, 500); // Debounce for 500ms
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [currentFolder, searchQuery, location.search]); // Added location.search back to dependencies
 
   const handleCreateNewFile = () => {
     const params = new URLSearchParams(location.search);
@@ -37,38 +77,30 @@ const DashboardPage = () => {
     try {
       await axios.delete(`http://localhost:3001/api/files/${fileId}?accessToken=${accessToken}`);
       alert('Item deleted successfully!');
-      // Refresh the file list after deletion
-      fetchFiles(); // Call fetchFiles to re-fetch the list
+      fetchFiles(currentFolder.id, searchQuery);
     } catch (err) {
       console.error('Error deleting file:', err);
       alert('Failed to delete item. Please check console for details.');
     }
   };
 
-  const fetchFiles = async () => {
-    const params = new URLSearchParams(location.search);
-    const accessToken = params.get('accessToken');
+  const handleFolderClick = (folder) => {
+    setFolderStack([...folderStack, folder]);
+    setSearchQuery(''); // Clear search when changing folders
+  };
 
-    if (!accessToken) {
-      setError('Access token not found. Please log in again.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await axios.get(`http://localhost:3001/api/files?accessToken=${accessToken}`);
-      setFiles(response.data);
-    } catch (err) {
-      console.error('Error fetching files:', err);
-      setError('Failed to load files. Please try again.');
-    } finally {
-      setLoading(false);
+  const handleGoBack = () => {
+    if (folderStack.length > 1) {
+      const newStack = [...folderStack];
+      newStack.pop();
+      setFolderStack(newStack);
+      setSearchQuery(''); // Clear search when going back
     }
   };
 
-  useEffect(() => {
-    fetchFiles();
-  }, [location.search]);
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
 
   if (loading) {
     return <div>Loading files...</div>;
@@ -81,15 +113,29 @@ const DashboardPage = () => {
   return (
     <div>
       <h1>Dashboard</h1>
+      {folderStack.length > 1 && <button onClick={handleGoBack}>Back</button>}
       <button onClick={handleCreateNewFile}>Create New File</button>
-      <h2>Your Google Drive Files:</h2>
+      <input
+        type="text"
+        placeholder="Search files..."
+        value={searchQuery}
+        onChange={handleSearchChange}
+        style={{ marginLeft: '10px' }}
+      />
+      <h2>{currentFolder.name}</h2>
       {files.length === 0 ? (
-        <p>No files found in your Google Drive.</p>
+        <p>No files found.</p>
       ) : (
         <ul>
           {files.map((file) => (
             <li key={file.id}>
-              {file.name} ({file.mimeType === 'application/vnd.google-apps.folder' ? 'Folder' : 'File'})
+              {file.mimeType === 'application/vnd.google-apps.folder' ? (
+                <span onClick={() => handleFolderClick(file)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                  {file.name} (Folder)
+                </span>
+              ) : (
+                <span>{file.name} (File)</span>
+              )}
               <button onClick={() => handleEditFile(file.id)}>Edit</button>
               <button onClick={() => handleDeleteFile(file.id)} style={{ marginLeft: '10px' }}>Delete</button>
             </li>

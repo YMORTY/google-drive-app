@@ -13,14 +13,25 @@ const getDriveClient = (accessToken) => {
 };
 
 // Function to list files from Google Drive
-const listFiles = async (accessToken) => {
+const listFiles = async (accessToken, folderId = 'root', searchQuery = '') => {
   const drive = getDriveClient(accessToken);
   try {
+    let query = `'${folderId}' in parents`;
+
+    if (searchQuery) {
+      const sanitizedQuery = searchQuery.replace(/'/g, "\\'");
+      query = `name contains '${sanitizedQuery}'`; // Temporarily remove folderId filter for search
+    }
+
+    console.log(`Attempting drive.files.list with query: "${query}"`);
     const res = await drive.files.list({
-      pageSize: 100, // Increased number of files to retrieve
+      q: query,
+      pageSize: 100,
       fields: 'nextPageToken, files(id, name, mimeType)',
     });
-    console.log('Files and folders received from Google Drive:');
+
+    console.log(`Executing query: "${query}"`);
+    console.log(`Files and folders received (folder: ${folderId}, search: '${searchQuery}'):`);
     res.data.files.forEach(item => console.log(`  Name: ${item.name}, MimeType: ${item.mimeType}`));
     return res.data.files;
   } catch (error) {

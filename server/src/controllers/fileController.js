@@ -2,14 +2,14 @@
 const googleDriveService = require('../services/googleDrive');
 
 exports.listFiles = async (req, res) => {
-  const accessToken = req.query.accessToken;
+  const { accessToken, folderId, searchQuery } = req.query;
 
   if (!accessToken) {
     return res.status(401).send('Access token is missing.');
   }
 
   try {
-    const files = await googleDriveService.listFiles(accessToken);
+    const files = await googleDriveService.listFiles(accessToken, folderId, searchQuery);
     res.json(files);
   } catch (error) {
     console.error('Error in listFiles controller:', error);
