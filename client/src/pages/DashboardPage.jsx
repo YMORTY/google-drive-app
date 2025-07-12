@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { LogOut, FileEdit, Trash2, Folder, FilePlus } from 'lucide-react';
+import { Button, Card, Form } from 'react-bootstrap'; // Import Bootstrap components
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -134,73 +135,79 @@ const DashboardPage = () => {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-blue-50 p-6">Loading files...</div>;
+    return <div className="container mt-5"><p>Loading files...</p></div>;
   }
 
   if (error) {
-    return <div className="min-h-screen bg-blue-50 p-6">Error: {error}</div>;
+    return <div className="container mt-5"><p className="text-danger">Error: {error}</p></div>;
   }
 
   return (
-    <div className="min-h-screen bg-blue-50 p-6 test-tailwind-class">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-lg font-medium" style={{ fontWeight: 'bold' }}>User: Roti Rome</span>
-          <button onClick={handleLogout} className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center">
-            <LogOut className="mr-2 h-4 w-4" /> Logout
-          </button>
+    <div className="container-fluid p-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className="h3">Dashboard</h1>
+        <div className="d-flex align-items-center gap-3">
+          <span className="fw-bold">User: Roti Rome</span>
+          <Button variant="secondary" onClick={handleLogout}>
+            <LogOut className="me-2" size={16} /> Logout
+          </Button>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 mb-6">
-        <button onClick={handleCreateNewFile} className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center">
-          <FilePlus className="mr-2 h-4 w-4" /> Create New File
-        </button>
-        <input
+      <div className="d-flex align-items-center gap-3 mb-4">
+        <Button variant="primary" onClick={handleCreateNewFile}>
+          <FilePlus className="me-2" size={16} /> Create New File
+        </Button>
+        <Form.Control
           type="text"
           placeholder="Search files..."
           value={searchQuery}
           onChange={handleSearchChange}
-          className="flex-grow px-3 py-2 border border-gray-300 rounded-md"
+          className="flex-grow-1"
         />
       </div>
 
-      <h2 className="text-2xl font-semibold mb-4">{currentFolder.name}</h2>
+      <h2 className="h4 mb-3">{currentFolder.name}</h2>
       {folderStack.length > 1 && (
-        <button onClick={handleGoBack} className="px-4 py-2 bg-gray-300 rounded-md mb-4">
+        <Button variant="outline-secondary" onClick={handleGoBack} className="mb-3">
           Back
-        </button>
+        </Button>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3">
         {files.length === 0 ? (
-          <p>No files found.</p>
+          <p className="col">No files found.</p>
         ) : (
           files.map((file) => (
-            <div key={file.id} className="flex items-center justify-between p-4 bg-white rounded-lg shadow">
-              <div className="flex items-center gap-3">
-                {file.mimeType === 'application/vnd.google-apps.folder' ? (
-                  <Folder className="text-blue-500" />
-                ) : (
-                  <FilePlus className="text-gray-500" />
-                )}
-                <span
-                  className="font-medium truncate max-w-[180px]"
-                  style={{ cursor: file.mimeType === 'application/vnd.google-apps.folder' ? 'pointer' : 'default', textDecoration: file.mimeType === 'application/vnd.google-apps.folder' ? 'underline' : 'none' }}
-                  onClick={() => file.mimeType === 'application/vnd.google-apps.folder' && handleFolderClick(file)}
-                >
-                  {file.name} ({file.mimeType === 'application/vnd.google-apps.folder' ? 'Folder' : 'File'})
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => handleEditFile(file.id)} className="p-2 rounded-full hover:bg-gray-100">
-                  <FileEdit className="w-4 h-4" />
-                </button>
-                <button onClick={() => handleDeleteFile(file.id)} className="p-2 rounded-full" style={{ backgroundColor: 'red' }}>
-                  <Trash2 className="w-4 h-4" style={{ color: 'white' }} />
-                </button>
-              </div>
+            <div key={file.id} className="col">
+              <Card className="h-100">
+                <Card.Body className="d-flex align-items-center justify-content-between p-2">
+                  <div
+                    className="d-flex align-items-center flex-grow-1 text-truncate"
+                    style={{ cursor: file.mimeType === 'application/vnd.google-apps.folder' ? 'pointer' : 'default' }}
+                    onClick={() => file.mimeType === 'application/vnd.google-apps.folder' && handleFolderClick(file)}
+                  >
+                    {file.mimeType === 'application/vnd.google-apps.folder' ? (
+                      <Folder className="text-primary me-2 flex-shrink-0" size={20} />
+                    ) : (
+                      <FilePlus className="text-secondary me-2 flex-shrink-0" size={20} />
+                    )}
+                    <span className="text-truncate">
+                      {file.name}
+                    </span>
+                  </div>
+                  <div className="d-flex gap-1">
+                    {file.mimeType !== 'application/vnd.google-apps.folder' && (
+                      <Button variant="outline-secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleEditFile(file.id); }}>
+                        <FileEdit size={16} />
+                      </Button>
+                    )}
+                    <Button variant="outline-danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteFile(file.id); }}>
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
+                </Card.Body>
+              </Card>
             </div>
           ))
         )}
