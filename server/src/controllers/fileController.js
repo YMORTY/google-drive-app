@@ -2,7 +2,8 @@
 const googleDriveService = require('../services/googleDrive');
 
 exports.listFiles = async (req, res) => {
-  const { accessToken, folderId, searchQuery } = req.query;
+  const { folderId, searchQuery } = req.query;
+  const { accessToken } = req.cookies;
 
   if (!accessToken) {
     return res.status(401).send('Access token is missing.');
@@ -18,7 +19,7 @@ exports.listFiles = async (req, res) => {
 };
 
 exports.createFile = async (req, res) => {
-  const accessToken = req.query.accessToken;
+  const { accessToken } = req.cookies;
   const { fileName, fileContent } = req.body;
 
   if (!accessToken || !fileName || fileContent === undefined) {
@@ -35,7 +36,7 @@ exports.createFile = async (req, res) => {
 };
 
 exports.updateFile = async (req, res) => {
-  const accessToken = req.query.accessToken;
+  const { accessToken } = req.cookies;
   const { fileId } = req.params;
   const { fileContent } = req.body;
 
@@ -53,7 +54,7 @@ exports.updateFile = async (req, res) => {
 };
 
 exports.readFile = async (req, res) => {
-  const accessToken = req.query.accessToken;
+  const { accessToken } = req.cookies;
   const { fileId } = req.params;
 
   if (!accessToken || !fileId) {
@@ -70,7 +71,7 @@ exports.readFile = async (req, res) => {
 };
 
 exports.deleteFile = async (req, res) => {
-  const accessToken = req.query.accessToken;
+  const { accessToken } = req.cookies;
   const { fileId } = req.params;
 
   if (!accessToken || !fileId) {

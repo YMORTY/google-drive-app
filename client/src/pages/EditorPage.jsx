@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 
 const EditorPage = () => {
   const { fileId } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const [fileName, setFileName] = useState('');
   const [fileContent, setFileContent] = useState('');
@@ -12,20 +11,11 @@ const EditorPage = () => {
   const [error, setError] = useState(null);
   const [isNewFile, setIsNewFile] = useState(!fileId);
 
-  const params = new URLSearchParams(location.search);
-  const accessToken = params.get('accessToken');
-
   useEffect(() => {
-    if (!accessToken) {
-      setError('Access token not found. Please log in again.');
-      setLoading(false);
-      return;
-    }
-
     if (!isNewFile) {
       const fetchFileContent = async () => {
         try {
-          const response = await axios.get(`http://localhost:3001/api/files/${fileId}?accessToken=${accessToken}`);
+          const response = await api.get(`/files/${fileId}`);
           setFileContent(response.data);
           // For existing files, we might not have the name easily, or it's part of the dashboard list.
           // For now, we'll just display content.
@@ -40,14 +30,9 @@ const EditorPage = () => {
     } else {
       setLoading(false);
     }
-  }, [fileId, isNewFile, accessToken]);
+  }, [fileId, isNewFile]);
 
   const handleSave = async () => {
-    if (!accessToken) {
-      alert('Access token missing. Please log in again.');
-      return;
-    }
-
     if (isNewFile && !fileName.trim()) {
       alert('Please enter a file name.');
       return;
@@ -55,18 +40,18 @@ const EditorPage = () => {
 
     try {
       if (isNewFile) {
-        await axios.post(`http://localhost:3001/api/files?accessToken=${accessToken}`, {
+        await api.post(`/files`, {
           fileName: fileName.trim(),
           fileContent: fileContent,
         });
         alert('File created successfully!');
       } else {
-        await axios.put(`http://localhost:3001/api/files/${fileId}?accessToken=${accessToken}`, {
+        await api.put(`/files/${fileId}`, {
           fileContent: fileContent,
         });
         alert('File updated successfully!');
       }
-      navigate(`/dashboard?accessToken=${accessToken}`); // Go back to dashboard after saving
+      navigate(`/dashboard`); // Go back to dashboard after saving
     } catch (err) {
       console.error('Error saving file:', err);
       alert('Failed to save file. Please check console for details.');
@@ -74,7 +59,7 @@ const EditorPage = () => {
   };
 
   const handleCancel = () => {
-    navigate(`/dashboard?accessToken=${accessToken}`);
+    navigate(`/dashboard`);
   };
 
   if (loading) {

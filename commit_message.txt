@@ -1,1 +1,1 @@
-\"migrated from tailwindcss to Bootstrap css\"  
+\"fixed the security issue of not passing authentication token in the URL\"  

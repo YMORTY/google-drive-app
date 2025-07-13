@@ -28,7 +28,8 @@ exports.handleGoogleCallback = async (req, res) => {
     // Here you would typically save the tokens to the user's session
     // or a database for persistent access.
     // For this example, we'll just send them back to the client.
-    res.redirect(`http://localhost:5173/dashboard?accessToken=${tokens.access_token}`);
+    res.cookie('accessToken', tokens.access_token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
+    res.redirect(`http://localhost:5173/dashboard`);
   } catch (error) {
     console.error('Error retrieving access token', error);
     res.status(500).send('Authentication failed');
