@@ -3,10 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { LogOut, FileEdit, Trash2, Folder, FilePlus } from 'lucide-react';
 import { Button, Card, Form } from 'react-bootstrap'; // Import Bootstrap components
+import { supabase } from '../lib/supabaseClient'; // Import supabase client
 
-const DashboardPage = () => {
+const DashboardPage = ({ session, fetchGoogleDriveFiles }) => { // Accept fetchGoogleDriveFiles as a prop
   const navigate = useNavigate();
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState([]); // Initialize as empty array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,28 +17,30 @@ const DashboardPage = () => {
   }]);
   const currentFolder = folderStack[folderStack.length - 1];
 
-  const fetchFiles = async (folderId, query) => {
-    setLoading(true);
-    try {
-      const response = await api.get(`/files?folderId=${folderId}&searchQuery=${query}`);
-      setFiles(response.data);
-    } catch (err) {
-      console.error('Error fetching files:', err);
-      setError('Failed to load files. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    const handler = setTimeout(() => {
-      fetchFiles(currentFolder.id, searchQuery);
-    }, 500); // Debounce for 500ms
+    if (fetchGoogleDriveFiles) {
+      const handler = setTimeout(async () => {
+        setLoading(true);
+        try {
+          const data = await fetchGoogleDriveFiles(currentFolder.id, searchQuery);
+          setFiles(data || []);
+        } catch (err) {
+          setError('Failed to load files. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      }, 500); // Debounce for 500ms
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [currentFolder, searchQuery]);
+      return () => {
+        clearTimeout(handler);
+      };
+    } else {
+      // If not Google provider, ensure state is reset
+      setLoading(false);
+      setFiles([]);
+      setError(null);
+    }
+  }, [currentFolder, searchQuery, fetchGoogleDriveFiles]);
 
   const handleCreateNewFile = () => {
     navigate(`/editor`);
@@ -55,7 +58,19 @@ const DashboardPage = () => {
     try {
       await api.delete(`/files/${fileId}`);
       alert('Item deleted successfully!');
-      fetchFiles(currentFolder.id, searchQuery);
+      // After deletion, re-fetch files if Google provider is active
+      if (fetchGoogleDriveFiles) {
+        setLoading(true); // Indicate loading while refetching
+        try {
+          const data = await fetchGoogleDriveFiles(currentFolder.id, searchQuery);
+          setFiles(data || []);
+        } catch (err) {
+          console.error('Error refetching files after delete:', err);
+          setError('Failed to refetch files after delete.');
+        } finally {
+          setLoading(false);
+        }
+      }
     } catch (err) {
       console.error('Error deleting file:', err);
       alert('Failed to delete item. Please check console for details.');
@@ -80,13 +95,32 @@ const DashboardPage = () => {
     setSearchQuery(e.target.value);
   };
 
-  const handleLogout = () => {
-    // Clear access token from URL (if present) and redirect to login page
-    navigate('/');
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error logging out:', error.message);
+    } else {
+      navigate('/'); // Redirect to login page after successful logout
+    }
   };
+
+  console.log('DashboardPage - Render. loading:', loading, 'files:', files, 'fetchGoogleDriveFiles:', fetchGoogleDriveFiles);
 
   if (loading) {
     return <div className="container mt-5"><p>Loading files...</p></div>;
+  }
+
+  // Display message if Google provider token is missing
+  if (!fetchGoogleDriveFiles) {
+    return (
+      <div className="container mt-5 text-center">
+        <h2 className="mb-3">Google Drive Access Required</h2>
+        <p>To view and manage your Google Drive files, please log in using your Google account.</p>
+        <Button variant="primary" onClick={handleLogout}>
+          <LogOut className="me-2" size={16} /> Log Out and Log in with Google
+        </Button>
+      </div>
+    );
   }
 
   if (error) {
@@ -126,7 +160,7 @@ const DashboardPage = () => {
       )}
 
       <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3">
-        {files.length === 0 ? (
+        {(files && files.length === 0) ? (
           <p className="col">No files found.</p>
         ) : (
           files.map((file) => (

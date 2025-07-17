@@ -20,8 +20,11 @@ const listFiles = async (accessToken, folderId = 'root', searchQuery = '') => {
 
     if (searchQuery) {
       const sanitizedQuery = searchQuery.replace(/'/g, "\\'");
-      query = `name contains '${sanitizedQuery}'`; // Temporarily remove folderId filter for search
+      query += ` and name contains '${sanitizedQuery}'`; // Append to existing query
     }
+
+    // Also include folders in the results
+    query += ` and (mimeType = 'application/vnd.google-apps.folder' or mimeType != 'application/vnd.google-apps.folder')`;
 
     console.log(`Attempting drive.files.list with query: "${query}"`);
     const res = await drive.files.list({

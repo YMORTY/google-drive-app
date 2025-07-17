@@ -20,7 +20,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use('/auth', authRoutes);
-app.use('/api/files', fileRoutes);
+const authMiddleware = require('./middleware/authMiddleware');
+app.use('/api/files', authMiddleware, fileRoutes);
 
 app.get('/', (req, res) => {
   res.send('Hello from the backend!');

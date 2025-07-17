@@ -72,3 +72,24 @@ Gemini CLI chat log started.
 *   **Final `npm install` and Server Start:** All dependencies were reinstalled, and the client development server was started.
 *   **Resolution of `postcss` Error:** An error related to `postcss` not being recognized was resolved by removing the `build:css` script from `package.json`, as it was no longer needed with Bootstrap's direct CSS import.
 *   **Successful Layout:** The user confirmed that the dashboard page now looks "lot better," indicating the Bootstrap migration successfully resolved the layout and styling issues.
+
+**Conversation Summary (Continued - Supabase Integration):**
+
+*   **Purpose:** Supabase was chosen as a Backend-as-a-Service (BaaS) to handle all authentication logic, delegating secure credential storage and OAuth 2.0 flows.
+*   **Client-Side Implementation:**
+    *   The `@supabase/supabase-js` SDK was installed.
+    *   `client/src/lib/supabaseClient.js` initializes the Supabase client using environment variables.
+    *   `client/src/pages/LoginPage.jsx` includes logic for signing in with Google, GitHub, and email/password.
+    *   `client/src/App.jsx` manages user sessions using Supabase authentication methods.
+*   **Server-Side Implementation:**
+    *   The server also has `@supabase/supabase-js` installed.
+*   `server/src/middleware/authMiddleware.js` uses Supabase to verify user tokens to protect API endpoints.
+*   **Documentation:** The `docs/supabase.md` file provides detailed architectural overview, setup instructions, and code examples for integrating Supabase in both the client and server.
+*   **Google Login "Access Blocked" Error:** Diagnosed and resolved the "Access blocked: This app's request is invalid" error during Google login, which was due to a mismatch in the Google Cloud Console's Authorized Redirect URIs and the Supabase callback URL.
+*   **Google Login "401 Unauthorized" Error:** Addressed the "401 Unauthorized: no token provided" error after Google login. This was fixed by ensuring the client (`client/src/App.jsx`) correctly extracted the Google access token (`session.provider_token`) from the Supabase session and included it in a custom `X-Google-Access-Token` header for all requests to the backend. The server (`server/src/controllers/fileController.js`) was updated to retrieve and use this token.
+*   **Google Login "Insufficient Scopes" Error:** Resolved the "Request had insufficient authentication scopes" error. This required updating the Google OAuth scopes requested during `signInWithOAuth` in `client/src/pages/LoginPage.jsx` to include `https://www.googleapis.com/auth/drive` (and later `offline_access` via `access_type: 'offline'`) to grant the necessary permissions for Google Drive access.
+*   **GitHub/Email Login Display Issue:** Identified that users logging in with GitHub or email saw "No files found" instead of the "Google Drive Access Required" message. This was due to `DashboardPage.jsx` attempting to fetch Google Drive files even without a Google token.
+*   **Refactored `fetchFiles` Logic:** To fix the GitHub/Email login display issue and related errors, the `fetchFiles` function was moved from `DashboardPage.jsx` to `App.jsx` and wrapped in `useCallback`. It is now conditionally passed as a prop to `DashboardPage.jsx` *only* if the authentication provider is Google. This ensures Google Drive API calls are never attempted for non-Google logins.
+*   **React Hooks Order Error:** Resolved a React Hooks order error caused by conditional `useCallback` calls. The `fetchFiles` function is now always passed, and its internal logic handles the provider check.
+*   **Persistent "Invalid Authentication Credentials" with GitHub (Final Fix):** The `X-Google-Access-Token` header was still being sent with a GitHub token. The logic in `App.jsx` was refined to explicitly `delete` this header if the authentication provider is not Google, ensuring it's never sent incorrectly.
+*   **Robust `files` State Handling:** Ensured the `files` state variable in `DashboardPage.jsx` is always treated as an array, even if `fetchGoogleDriveFiles` returns `null` or `undefined`, preventing `TypeError` when accessing `files.length`.
