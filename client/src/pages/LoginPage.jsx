@@ -5,9 +5,12 @@ import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Container, Row, Col, Form } from 'react-bootstrap';
 
+import { Link, useNavigate } from 'react-router-dom';
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate();
 
   const handleLoginWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({ provider: 'google', options: { scopes: 'https://www.googleapis.com/auth/drive', access_type: 'offline' } });
@@ -19,11 +22,16 @@ export default function LoginPage() {
 
   const handleLoginWithEmail = async (e) => {
     e.preventDefault();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    if (error) console.error('Error logging in:', error.message);
+    if (error) {
+      console.error('Error logging in:', error.message);
+    } else if (data.user) {
+      // Successfully logged in, redirect to dashboard
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -32,7 +40,7 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <CardTitle className="h2">Log in</CardTitle>
           <p className="text-muted">
-            Don't have an account? <a href="#" className="text-decoration-none">Sign up</a>
+            Don't have an account? <Link to="/signup" className="text-decoration-none">Sign up</Link>
           </p>
         </CardHeader>
         <CardContent>

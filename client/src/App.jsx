@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import EditorPage from './pages/EditorPage';
+import SignupPage from './pages/SignupPage'; // Import SignupPage
 import { supabase } from './lib/supabaseClient';
 import api from './services/api'; // Import the api instance
 
@@ -95,6 +96,7 @@ function App() {
         />
         <Route path="/editor" element={session ? <EditorPage /> : <Navigate to="/" />} />
         <Route path="/editor/:fileId" element={session ? <EditorPage /> : <Navigate to="/" />} />
+        <Route path="/signup" element={<SignupPage />} />
       </Routes>
     </Router>
   );

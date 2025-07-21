@@ -1,1 +1,1 @@
-\"fixed the security issue of not passing authentication token in the URL\"  
+added supabase as backend as service and made the authentication work by google and github
