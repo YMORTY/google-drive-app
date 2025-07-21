@@ -10,6 +10,7 @@ import { Link, useNavigate } from 'react-router-dom';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // New state for password visibility
   const navigate = useNavigate();
 
   const handleLoginWithGoogle = async () => {
@@ -70,13 +71,17 @@ export default function LoginPage() {
               </Form.Group>
               <Form.Group controlId="formBasicPassword">
                 <Input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-                <Button variant="link" className="position-absolute end-0 top-50 translate-middle-y text-decoration-none">
-                  Hide
+                <Button
+                  variant="link"
+                  className="position-absolute end-0 top-50 translate-middle-y text-decoration-none"
+                  onClick={() => setShowPassword(!showPassword)} // Toggle password visibility
+                >
+                  {showPassword ? "Hide" : "Show"}
                 </Button>
               </Form.Group>
               <div className="d-flex justify-content-between align-items-center">

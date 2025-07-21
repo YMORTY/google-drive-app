@@ -1,1 +1,1 @@
-added supabase as backend as service and made the authentication work by google and github
+Added the logic of Signup Page and login using email.
